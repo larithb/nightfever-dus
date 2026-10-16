@@ -1,4 +1,20 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nightfever D&#xFC;sseldorf</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="theme-color" content="#14172B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nightfever">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
 
@@ -392,6 +408,8 @@
 
   .nf-status { text-align: center; font-size: 13px; color: var(--ink-dim); padding: 60px 0; }
 </style>
+</head>
+<body>
 
 <div id="nf-root">
   <div class="nf-wrap">
@@ -414,6 +432,23 @@
 </div>
 
 <script>
+(function () {
+  // Bittet den Browser, diese Seite bei kuenftigen Besuchen nicht aus dem
+  // Zwischenspeicher zu laden, sondern jedes Mal neu abzurufen. Wirkt nicht in
+  // jedem Browser zu 100%, hilft aber, dass Updates schneller ankommen.
+  const cacheMetas = [
+    { httpEquiv: 'Cache-Control', content: 'no-cache, no-store, must-revalidate' },
+    { httpEquiv: 'Pragma', content: 'no-cache' },
+    { httpEquiv: 'Expires', content: '0' }
+  ];
+  cacheMetas.forEach(m => {
+    const meta = document.createElement('meta');
+    meta.setAttribute('http-equiv', m.httpEquiv);
+    meta.setAttribute('content', m.content);
+    document.head.appendChild(meta);
+  });
+})();
+
 (function () {
   // Ohne diese Angabe rendert das Handy die Seite in Desktop-Breite und zoomt sie
   // verkleinert hinein - deshalb wirkt alles klein und man muss reinzoomen.
@@ -541,74 +576,22 @@
     showInstallHint();
   });
 
-  function roundedRectPath(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-
-  function buildIconDataUrl(bg, accent) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 192; canvas.height = 192;
-    const ctx = canvas.getContext('2d');
-    roundedRectPath(ctx, 0, 0, 192, 192, 36);
-    ctx.fillStyle = bg;
-    ctx.fill();
-    ctx.save();
-    ctx.translate(96, 102);
-    ctx.scale(7, 7);
-    ctx.translate(-5, -6.5);
-    ctx.beginPath();
-    ctx.moveTo(5, 0);
-    ctx.bezierCurveTo(5, 3, 9, 5, 9, 8.5);
-    ctx.bezierCurveTo(9, 11, 7.2, 13, 5, 13);
-    ctx.bezierCurveTo(2.8, 13, 1, 11, 1, 8.5);
-    ctx.bezierCurveTo(1, 5, 5, 3, 5, 0);
-    ctx.closePath();
-    ctx.shadowColor = accent;
-    ctx.shadowBlur = 10;
-    ctx.fillStyle = accent;
-    ctx.fill();
-    ctx.restore();
-    return canvas.toDataURL('image/png');
-  }
-
   function setupHomeScreenTags() {
+    // Icons und Manifest sind jetzt echte Dateien (manifest.json, icon-*.png).
+    // Hier halten wir nur Seitentitel und Theme-Farbe aktuell.
     try {
       const style = getComputedStyle(root);
       const night = style.getPropertyValue('--night').trim() || '#14172B';
-      const flame = style.getPropertyValue('--flame').trim() || '#E8B657';
-      const title = data.event.title || 'Nightfever';
-      const icon = buildIconDataUrl(night, flame);
-
-      document.title = title;
-
-      const upsert = (selector, tag, attrs) => {
-        let el = document.querySelector(selector);
-        if (!el) { el = document.createElement(tag); document.head.appendChild(el); }
-        Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-        return el;
-      };
-
-      upsert('link[rel="icon"]', 'link', { rel: 'icon', href: icon });
-      upsert('link[rel="apple-touch-icon"]', 'link', { rel: 'apple-touch-icon', href: icon });
-      upsert('meta[name="apple-mobile-web-app-capable"]', 'meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
-      upsert('meta[name="apple-mobile-web-app-title"]', 'meta', { name: 'apple-mobile-web-app-title', content: title });
-      upsert('meta[name="theme-color"]', 'meta', { name: 'theme-color', content: night });
-
-      const manifest = {
-        name: title, short_name: title.slice(0, 12), start_url: location.href,
-        display: 'standalone', background_color: night, theme_color: night,
-        icons: [{ src: icon, sizes: '192x192', type: 'image/png' }]
-      };
-      const manifestUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/json' }));
-      upsert('link[rel="manifest"]', 'link', { rel: 'manifest', href: manifestUrl });
+      document.title = (data && data.event && data.event.title) || 'Nightfever';
+      let theme = document.querySelector('meta[name="theme-color"]');
+      if (!theme) {
+        theme = document.createElement('meta');
+        theme.setAttribute('name', 'theme-color');
+        document.head.appendChild(theme);
+      }
+      theme.setAttribute('content', night);
     } catch (e) {
-      console.error('Home-Bildschirm-Setup fehlgeschlagen', e);
+      console.error('Titel/Theme-Update fehlgeschlagen', e);
     }
   }
 
@@ -939,4 +922,14 @@
 
   load();
 })();
+
+// Service Worker registrieren, damit Browser die Seite als echte App installieren koennen.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.error('Service Worker fehlgeschlagen', err));
+  });
+}
 </script>
+
+</body>
+</html>
