@@ -295,6 +295,13 @@
     letter-spacing: 0.03em;
     white-space: nowrap;
   }
+  .nf-priority-select {
+    font-family: 'Inter', sans-serif;
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+  .nf-priority-select option { color: var(--ink); background: var(--panel); text-transform: none; }
   .nf-priority-hoch { color: #E85B4F; background: #E85B4F22; }
   .nf-priority-mittel { color: #E0B33C; background: #E0B33C1f; }
   .nf-priority-niedrig { color: #5FB37A; background: #5FB37A22; }
@@ -508,6 +515,13 @@
       <option value="">&#x2014; niemand &#x2014;</option>
       ${options}
     </select>`;
+  }
+
+  function prioritySelect(id, current) {
+    const opts = Object.entries(PRIORITIES).map(([key, p]) =>
+      `<option value="${key}" ${key === current ? 'selected' : ''}>${p.label}</option>`
+    ).join('');
+    return `<select class="nf-priority nf-priority-select nf-priority-${current}" data-action="set-priority" data-id="${id}" aria-label="Dringlichkeit">${opts}</select>`;
   }
 
   function sortedTodos() {
@@ -775,7 +789,7 @@
               <input type="checkbox" class="nf-flame-check" data-action="toggle-todo" data-id="${t.id}" ${t.done ? 'checked' : ''} aria-label="Todo erledigt" />
               <span class="nf-name">${escapeHtml(t.text)}</span>
               ${assigneeSelect(t.id, t.assignee, 'todo')}
-              ${!t.done ? `<span class="nf-priority nf-priority-${t.priority || 'mittel'}">${PRIORITIES[t.priority || 'mittel'].label}</span>` : ''}
+              ${!t.done ? prioritySelect(t.id, t.priority || 'mittel') : ''}
               <button class="nf-del" data-action="del-todo" data-id="${t.id}" aria-label="Entfernen">\u2715</button>
             </li>`).join('') : '<li class="nf-empty">Keine offenen Punkte.</li>'}
         </ul>
@@ -879,6 +893,13 @@
         el.addEventListener('change', () => {
           const t = data.todos.find(t => t.id === id);
           if (t) t.done = el.checked;
+          save(); render();
+        });
+      }
+      if (action === 'set-priority') {
+        el.addEventListener('change', () => {
+          const t = data.todos.find(t => t.id === id);
+          if (t) t.priority = el.value;
           save(); render();
         });
       }
